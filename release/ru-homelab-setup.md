@@ -1,24 +1,28 @@
-# План по установке и настройке домашнего сервера на Ubuntu Server
-
-**Версия:** 0.9.1
-**Дата:** Декабрь 2025  
-
-Это **максимально подробное пошаговое руководство** по созданию многоцелевого домашнего сервера с нуля. Мы будем использовать Ubuntu Server, Podman (контейнеризация) и systemd quadlets, чтобы построить безопасную, легко управляемую и мощную систему.
-
 ---
+version: 1.0.0
+tags:
+  - linux
+  - manual
+  - selfhosting
+  - containsers
+  - podman
+---
+# План по установке и настройке домашнего сервера на Ubuntu Server
+## Предисловие
+Это пошаговое руководство по созданию домашнего сервера с нуля. Мы будем использовать Ubuntu Server, Podman (контейнеризация) и systemd quadlets, чтобы построить собственную медиа систему, а также попробовать Linux собственными руками.
 
-## Оглавление
+Руководство последовательно написано с помощью Gemini CLI, а потом доведено до ума через Perplexity PRO.
 
-- [Глава 0: Подготовка](#глава-0-подготовка)
-- [Глава 1: Установка и базовая настройка системы](#глава-1-установка-и-базовая-настройка-системы)
-- [Глава 2: Безопасность и удаленный доступ](#глава-2-безопасность-и-удаленный-доступ)
-- [Глава 3: Фундамент для сервисов](#глава-3-фундамент-для-сервисов)
-- [Глава 4: Сетевая инфраструктура и файловый доступ](#глава-4-сетевая-инфраструктура-и-файловый-доступ)
-- [Глава 5: Развертывание основных сервисов](#глава-5-развертывание-основных-сервисов)
-- [Глава 6: Стратегия резервного копирования](#глава-6-стратегия-резервного-копирования)
-- [Глава 7: Развертывание собственных приложений с помощью Kamal](#глава-7-развертывание-собственных-приложений)
-- [Глава 8: Дополнительные сервисы и расширения](#глава-8-дополнительные-сервисы-и-расширения)
-- [Приложения](#приложения)
+Тем не менее - это не "слепая" генерация. Каждый раздел, попавший в финальную версию, я прошел самостоятельно, постаравшись обнаружить все грабли и несостыковки.
+
+Каждый устанавливаемый нами инструмент заслуживает собственной инструкции. Поэтому детали использования отдельно и совместно с другими приложениями нужно будет поискать самостоятельно. Тут мы рассмотрим только базовые сценарии.
+
+Я не являюсь системным администратором. Я - простой Linux пользователь. Поэтому данная работа не свободна от ошибок и неточностей. Особенно в части команд не на Linux.
+От пользователя - пользователям!
+
+По мере моего собственного прогресса, релизная версия документа будет также обновляться.
+
+Похвалить и поблагодарить меня можно в [X](https://x.com/MirrorHedgehog) и [Mastodon](https://techhub.social/deck/@tuchnyak).
 
 ---
 
@@ -31,7 +35,6 @@
 - **Медиасервера** (Jellyfin) - домашний Netflix для вашей коллекции
 - **Torrent-клиента** (qBittorrent) с веб-интерфейсом
 - **Синхронизации файлов** (Syncthing) между устройствами
-- **Разработки и деплоя** своих приложений (Kamal)
 - **Локальных LLM моделей** (Ollama + Open WebUI)
 
 ### 0.2. Что нужно знать заранее
@@ -41,7 +44,7 @@
 - Понимание что такое IP-адреса и порты
 - Базовые навыки редактирования текстовых файлов
 
-Не обязательно быть экспертом! Всё объясним подробно.
+Непонятные термины сегодня легко узнать через любой LLM-чат.
 
 ### 0.3. Необходимое оборудование
 
@@ -102,16 +105,6 @@ CertUtil -hashfile ubuntu-24.04.1-live-server-amd64.iso SHA256
 
 ### 0.6. Подготовка сервера к установке
 
-**Чек-лист перед установкой:**
-
-☐ Что мы будем строить?
-☐ Что нужно знать заранее
-☐ Необходимое оборудование
-☐ Скачивание Ubuntu Server
-☐ Создание загрузочного USB
-☐ Подготовка сервера к установке
-☐ Что мы планируем в итоге получить
-
 **Как узнать IP адрес роутера:**
 
 На любом компьютере в сети (Windows/macOS/Linux):
@@ -154,12 +147,12 @@ ipconfig
 **Шаг 1:** Вставьте USB флешку в сервер
 
 **Шаг 2:** Включите компьютер и войдите в BIOS/UEFI
-- Обычно нужно нажать F2, F12, Delete или Esc при загрузке
+- Обычно нужно нажать F2, F12, F7, Delete или Esc при загрузке
 - Зависит от производителя материнской платы
 
 **Шаг 3:** Измените порядок загрузки (Boot Order)
 - Поставьте USB флешку на первое место
-- Сохраните и выйдите (обычно F10)
+- Сохраните и выйдите (обычно F10), соблюдая указания в пользовательском интерфейсе.
 
 **Шаг 4:** Компьютер загрузится с USB и покажет меню установки Ubuntu Server
 
@@ -200,7 +193,8 @@ ipconfig
 - **Выбор:** Leave blank (оставьте пустым)
 
 #### Mirror
-- **Выбор:** Ubuntu Default is fine (оставьте по умолчанию)
+- **Выбор:** Ubuntu Default is fine (оставьте по умолчанию).
+    * Примечание - Возможно, нужно будет другой регион.
 
 #### Разметка диска (важно!)
 
@@ -210,7 +204,8 @@ ipconfig
 
 **Шаг 2:** Вы увидите ваш SSD/NVMe диск (обычно `/dev/nvme0n1` или `/dev/sda`)
 
-**Шаг 3:** Создайте таблицу разделов GPT (если диск новый)
+**Шаг 3:** Создайте таблицу разделов GPT (если диск новый).
+Важно - не торопиться и внимательно читать все подписи интерфейса.
 
 **Разметка:**
 
@@ -256,7 +251,7 @@ ipconfig
 Пропустите все Snap пакеты. Мы установим нужное позже через apt.
 
 #### Завершение установки
-
+Читаем внимательно :)
 1. Дождитесь завершения установки (5-10 минут)
 2. Извлеките USB-флешку когда появится запрос
 3. Нажмите Enter для перезагрузки
@@ -267,7 +262,6 @@ ipconfig
 
 ```
 Ubuntu 24.04 LTS homeserver tty1
-
 homeserver login: _
 ```
 
@@ -283,7 +277,7 @@ homeserver login: _
 myusername@homeserver:~$
 ```
 
-Поздравляю! Система установлена.
+Поздравляю! Система установлена.Можно вытереть пот со лба и наградить себя чем-нибудь вкусным.
 
 ### 1.4. Обновление системы
 
@@ -326,6 +320,39 @@ sudo apt install -y vim iputils-ping git curl wget htop top net-tools tree lsof
 - `lsof` — список открытых файлов и портов
 
 Эти утилиты критичны для диагностики и работы с сервером на следующих этапах.
+
+#### Немного о VIM
+Vim - это консольный текстовый редактор, который повергает в шок неподготовленного пользователя. Некоторые до сих пор не могут его закрыть. Но не волнуйтесь - всё проще, чем кажется.
+
+У Vim есть три режима работы:
+1. **NORMAL** - режим для перемещения курсора по тексту, манипуляции с текстом, а также ввод команд, которые начинаются с ":".
+2. **INSERT** - режим непосредственного ввода текста. Перейти в него из нормального режима можно нажав "i". Вернуться в нормальный режим - "Esc".
+3. **VISUAL** - режим выделения текста для последующих манипуляций с выделенным фрагментом. 
+
+##### Основные действия.
+- Перемещение курсора по тексту непривычно организовано через клавиши j, k, h, l в нормальном режиме. Вниз, вверх, влево, вправо соответственно. Но, скорее всего, будут доступны и клавиши со стрелками.
+- Наводим курсор, нажимаем "i" и печатаем.
+- Нажимаем "Esc" и возвращаемся в нормальный режим.
+- Чтобы выделить текст, ставим курсор, нажимаем "v" и выделяем.
+  - Далее можем, например, удалить через "d".
+
+В общем, сначала будет сложно, но я верю, что справится каждый. 
+
+**Базовая шпаргалка Vim (для новичков):**
+
+- `i` — войти в режим вставки (Insert mode)
+- `Esc` — вернуться в Normal mode
+- `:w` — сохранить
+- `:q` — выйти
+- `:q!` — выйти без сохранения
+- `:wq` — сохранить и выйти
+- `dd` — удалить строку
+- `yy` — скопировать строку
+- `p` — вставить
+- `/слово` — поиск слова
+- `n` — следующее совпадение
+
+Больше информации: `:help` в vim или `vimtutor` в командной строке.
 
 ### 1.6. Настройка сети (Ethernet или Wi-Fi со статическим IP)
 
@@ -393,7 +420,7 @@ Ubuntu использует Netplan для настройки сети.
 sudo cp /etc/netplan/00-installer-config.yaml /etc/netplan/00-installer-config.yaml.bak
 ```
 
-**Шаг 2:** На сервере отредактируйте конфигурацию Netplan
+**Шаг 2:** На сервере отредактируйте конфигурацию Netplan (имя файла может немного отличаться)
 ```bash
 sudo vim /etc/netplan/00-installer-config.yaml
 ```
@@ -477,10 +504,11 @@ ping google.com -c 4
 ```
 
 Если пакеты проходят (0% packet loss) — отлично, всё работает!
+Радуем себя вкусняшкой.
 
 ### 1.7. Подключение по SSH с другого компьютера
 
-Теперь можно отключить монитор и клавиатуру от сервера и работать удалённо через SSH.
+Теперь можно отключить монитор и клавиатуру от сервера и работать удалённо ~~азбукой Морзе~~ через SSH.
 
 **С вашего основного компьютера (Windows/macOS/Linux):**
 
@@ -556,6 +584,7 @@ TIMELINE_LIMIT_YEARLY="0"
 ```
 
 Это значит: храним 5 часовых и 7 дневных снапшотов.
+Вы вольный придумать свою комбинацию. Вы тут главный!
 
 **Шаг 4:** На сервере запустите таймеры snapper
 
@@ -746,18 +775,9 @@ free -h
 
 После настройки swap будет показываться как сумма swapfile + zram.
 
-### 1.10. Чек-лист Главы 1
+---
 
-☐ Ubuntu Server 24.04 LTS установлен  
-☐ Btrfs файловая система настроена  
-☐ Система обновлена (apt update && apt upgrade)  
-☐ Базовые утилиты установлены  
-☐ Сеть работает (Ethernet или Wi-Fi)  
-☐ Статический IP адрес назначен  
-☐ SSH подключение работает  
-☐ Snapper настроен для автоматических снапшотов  
-☐ Swap-файл на отдельном подтоме @swap настроен  
-☐ ZRAM (20%) настроен
+Вы прекрасны - празднуем!
 
 ---
 
@@ -833,15 +853,16 @@ ssh -i ~/.ssh/homeserver_key myusername@192.168.1.100
 #### Удобство: Добавление конфига SSH
 
 **На локальном компьютере создайте конфиг для удобства:**
+```
+vim ~/.ssh/config
+```
 
 ```bash
-cat >> ~/.ssh/config << EOF
 Host homeserver
     HostName 192.168.1.100
     User myusername
     IdentityFile ~/.ssh/homeserver_key
     Port 22
-EOF
 ```
 
 Теперь можно просто:
@@ -1079,17 +1100,10 @@ sudo ufw delete allow ssh  # или sudo ufw delete allow 22/tcp
 sudo ufw reload
 ```
 
-### 2.5. Чек-лист Главы 2
 
-☐ SSH ключи сгенерированы  
-☐ Публичный ключ скопирован на сервер  
-☐ Вход по ключу работает  
-☐ Вход по паролю отключен  
-☐ UFW установлен и включен  
-☐ SSH, HTTP, HTTPS разрешены в UFW  
-☐ fail2ban установлен и работает  
-☐ fail2ban настроен на systemd-journald  
-☐ (Опционально) SSH порт изменен на 2222
+---
+
+Это была нервная глава. Дальше будет проще. :)
 
 ---
 
@@ -1110,13 +1124,19 @@ sudo ufw reload
 # Создание основного каталога
 sudo mkdir -p /srv
 
-# Создание подкаталогов для каждого сервиса
+# Создание подкаталогов для каждого сервиса (указано с запасом на будущее)
 sudo mkdir -p /srv/nextcloud/db
 sudo mkdir -p /srv/nextcloud/html
 sudo mkdir -p /srv/jellyfin/config
 sudo mkdir -p /srv/jellyfin/media
+sudo mkdir -p /srv/jellyfin/media/movies
+sudo mkdir -p /srv/jellyfin/media/shows
+sudo mkdir -p /srv/jellyfin/media/music
 sudo mkdir -p /srv/qbittorrent/config
 sudo mkdir -p /srv/qbittorrent/downloads
+sudo mkdir -p /srv/qbittorrent/downloads/movies
+sudo mkdir -p /srv/qbittorrent/downloads/shows
+sudo mkdir -p /srv/qbittorrent/downloads/music
 sudo mkdir -p /srv/syncthing/config
 sudo mkdir -p /srv/syncthing/data
 sudo mkdir -p /srv/ollama
@@ -1305,23 +1325,16 @@ set laststatus=2
 
 Больше информации: `:help` в vim или `vimtutor` в командной строке.
 
-### 3.7. Чек-лист Главы 3
+---
 
-☐ Каталоги `/srv/*` созданы  
-☐ Права доступа на `/srv` проверены  
-☐ Podman установлен  
-☐ podman-docker установлен (для Kamal)  
-☐ Linger включён для пользователя (loginctl show-user)  
-☐ (Опционально) Cockpit установлен и доступен на :9090  
-☐ (Опционально) Zellij установлен  
-☐ (Опционально) Vim настроен
+Рекомендация - Добавляйте в закладки браузера все сервисы, которые мы настроили и будем настраивать далее.
 
 ---
 
 ## Глава 4: Файловый доступ
 
 В этой главе мы настроим:
-- Samba для доступа к файлам из Windows/macOS
+- Samba для доступа к файлам с ПК
 
 ### 4.1. Развертывание Samba для файлового доступа
 
@@ -1338,14 +1351,10 @@ sudo apt install -y samba samba-common-bin
 
 **На сервере:**
 ```bash
-mkdir -p /srv/Media
-mkdir -p /srv/Sync
-mkdir -p /srv/Backups
-
 # Установка прав доступа
-chmod 755 /srv/Media
-chmod 755 /srv/Sync
-chmod 755 /srv/Backups
+chmod 755 /srv/jellyfin/media
+chmod 755 /srv/qbittorrent/downloads
+chmod 755 /srv/backups
 ```
 
 #### Конфигурация Samba
@@ -1411,12 +1420,6 @@ sudo vim /etc/samba/smb.conf
 
 **Примечание:** `valid users = myusername` ограничивает доступ только вашим пользователем. Можно добавить несколько: `valid users = myusername, user2` или группу: `valid users = @familygroup`.
 
-**На сервере создайте каталог для Backups:**
-```bash
-sudo mkdir -p /srv/backups
-sudo chown myusername:myusername /srv/backups
-```
-
 #### Добавление пользователя Samba
 
 Samba использует отдельную базу пользователей.
@@ -1474,12 +1477,6 @@ sudo ufw status verbose | grep -E "137|138|139|445"
 5. Нажмите Готово
 6. Введите username `myusername` и пароль от Samba
 
-**Из macOS:**
-1. Finder → Go → Connect to Server (Cmd+K)
-2. Адрес: `smb://192.168.1.100/Media`
-3. Нажмите Connect
-4. Введите username и пароль
-
 **Из Linux:**
 ```bash
 # Установка инструментов
@@ -1491,14 +1488,6 @@ sudo mount -t cifs //192.168.1.100/Media /mnt/media -o username=myusername
 # Просмотр подключенных шар
 mount | grep cifs
 ```
-
-### 4.2. Чек-лист Главы 4
-☐ Samba установлена  
-☐ Конфигурация Samba отредактирована  
-☐ Пользователь Samba добавлен (smbpasswd)  
-☐ Samba сервис запущен и включён  
-☐ Порты Samba открыты в UFW  
-☐ Подключение к Samba шарам протестировано
 
 ---
 
@@ -1556,7 +1545,7 @@ WantedBy=default.target
 - `[Service]` — поведение systemd
 - `[Install]` — автозапуск при загрузке
 
-**Важно:** Quadlet файлы должны быть именованы так: `container-<NAME>.container` или `pod-<NAME>.pod`
+**Важно:** Quadlet файлы должны быть именованы так: `container-<NAME>.container`
 
 Управление:
 ```bash
@@ -1574,6 +1563,7 @@ systemctl --user status container-<NAME>.service
 
 # Логи
 journalctl --user -f -u container-<NAME>.service
+# В логах перемещаемся как в Vim
 ```
 
 ### 5.2. Nextcloud (личное облако)
@@ -1601,7 +1591,7 @@ POSTGRES_PASSWORD=your_very_strong_password_min_16_chars
 POSTGRES_DB=nextcloud
 ```
 
-**Важно:** Замените пароль на реальный сложный пароль!
+**Важно:** Замените пароль на реальный **_сложный_** пароль!
 
 Ограничьте права доступа:
 ```bash
@@ -1654,6 +1644,7 @@ podman exec -it nextclouddb psql -U postgres -c "CREATE DATABASE newservice;"
 ```
 
 Или создать отдельный контейнер на другом порту (5433, 5434 и т.д.) если нужна другая версия PostgreSQL.
+А лучше всего новый сервис с новой БД соединять в отдельной контейнерной сети по примеру `Network=nextcloud-net`.
 
 ### 5.4. Nextcloud (личное облако)
 
@@ -1701,7 +1692,7 @@ sudo ufw allow 8180/tcp comment "Nextcloud"
 
 #### Первоначальная настройка Nextcloud
 
-На любом компьютере откройте браузер: `http://192.168.1.100:8180`
+На любом компьютере в домамшней сети откройте браузер: `http://192.168.1.100:8180`
 
 Вы увидите мастер установки Nextcloud.
 
@@ -1723,9 +1714,6 @@ Nextcloud установится (может занять 1-2 минуты).
 2. Выгрузка фотографий и видео с камеры смартфона в сторону облака. 
 3. Односторонняя выгрузка произвольных директорий смартфона в облако.
 
-Двусторонняя синхронизация файлов между смартофном и облаком меня разочаровала своим отсутствием. Видимо, в ближайшее время, этого функционала не добиться на мобильном устройстве без дополнительных утилит. Это мне, к сожалению, не подходит. 
-По этой же причине не получится заменить, например Google Keep, заметками от Nextcloud. Для этого, в частности для синхронизации библиотеки LogSeq, я использую Syncthing, о котором речь будет идти дальше.
-
 ### 5.5. Jellyfin (медиасервер)
 
 #### Создание quadlet для Jellyfin
@@ -1746,8 +1734,12 @@ ContainerName=jellyfin
 PublishPort=8096:8096
 PublishPort=8920:8920
 Volume=/srv/jellyfin/config:/config
-Volume=/srv/jellyfin/media:/media
-Environment=JELLYFIN_PublishedServerUrl=http://192.168.1.100:8096
+Volume=/srv/jellyfin/media/movies:/media/movies
+Volume=/srv/jellyfin/media/shows:/media/shows
+Volume=/srv/jellyfin/media/music:/media/music
+Volume=/srv/qbittorrent/downloads/movies:/media/downloads/movies
+Volume=/srv/qbittorrent/downloads/music:/media/downloads/music
+Volume=/srv/qbittorrent/downloads/shows:/media/downloads/shows
 
 [Service]
 Restart=always
@@ -1755,6 +1747,7 @@ Restart=always
 [Install]
 WantedBy=default.target
 ```
+Я решил дать доступ ещё и к директориям, в которые скачиваются торренты. Можно было бы, например, перемещать скачанное в media директорию Jellyfin.
 
 **На сервере запустите:**
 ```bash
@@ -1774,27 +1767,13 @@ sudo ufw allow 8920/tcp comment "Jellyfin HTTPS"
 2. Создайте пользователя (admin)
 3. **Add Media Library:**
 - **Type:** Movies (или другое)
-- **Folders:** `/media` (путь внутри контейнера)
+- **Folders:** `/media` (путь внутри контейнера, можно указать несколько)
 4. Завершите настройку
 
 #### Добавление медиафайлов
+Чтобы Jellyfin сходу распознавал фильмы/музыку/сериалы необходимо располагать файлы в соответствующих директориях, подключенным к библиотека нужного типа, а также соблюдать определённую файловую структуру. Например для фильмов документация тут: [https://jellyfin.org/docs/general/server/media/movies](https://jellyfin.org/docs/general/server/media/movies) 
 
-**Workflow:**
-
-1. На компьютере используйте Samba шару `Torrents` (\\192.168.1.100\Torrents) или `Downloads` для скачивания торрентов через qBittorrent
-2. Скачанные файлы появляются в `/srv/qbittorrent/downloads`
-3. Откройте Samba шару `Media` (\\192.168.1.100\Media)
-4. Скопируйте или переместите фильм туда
-5. В Jellyfin: **Dashboard** → **Libraries** → **Scan Libraries** для обновления
-
-**Альтернатива (если много фильмов):**
-
-**На сервере** создайте символическую ссылку:
-```bash
-ln -s /srv/qbittorrent/downloads /srv/jellyfin/media/torrents
-```
-
-Тогда скачанные файлы сразу видны в Jellyfin без перемещения.
+Вместе с любым LLM-чатом вы спарвитесь с перемещением и организацией файлов даже через термина :) Я верю в нас!
 
 ### 5.6. qBittorrent (торрент-клиент)
 
@@ -1844,6 +1823,7 @@ sudo ufw allow 8090/tcp comment "qBittorrent WebUI"
 sudo ufw allow 6881/tcp comment "qBittorrent DHT"
 sudo ufw allow 6881/udp comment "qBittorrent DHT UDP"
 ```
+Примечание - qBittorrent помечает свои файлы и директории пользователем 100999, в моём случае. Я не стал с этим бороться. Управляю и перемещаю файлы, если нужно для Jellyfin, через `sudo`.
 
 #### Первоначальная настройка qBittorrent
 
@@ -1860,8 +1840,15 @@ sudo ufw allow 6881/udp comment "qBittorrent DHT UDP"
 ##### Возможные проблемы
 1. "Unauthorized" вместо окна логина.
 ```bash
-sudo vim #TODO
+sudo vim /srv/qbittorrent/config/qBittorrent/qBittorrent.conf
 ```
+
+Найдите или добавтье строку следующего содержания: 
+```
+WebUI\HostHeaderValidation=false
+```
+
+Также, если не подошёл пароль `adminadmin` зайдите в Cockpit, далее в логи контейнера `qbittorrent` и отыщите там временный пароль, который следует заменить первым делом.
 
 #### Настройка каталога загрузки
 
@@ -1962,17 +1949,15 @@ sudo lsof -i :<port_number>
 systemctl --user stop container-<NAME>.service
 ```
 
-### 5.9. Чек-лист Главы 5
+---
 
-☐ Nextcloud запущен и доступен на :8082  
-☐ Jellyfin запущен и доступен на :8096  
-☐ qBittorrent запущен и доступен на :8081  
-☐ Syncthing запущен и доступен на :8384  
-☐ Все порты открыты в UFW
+Мои поздравления! Можно начинать наполнять свой сервер контентом!
 
 ---
 
 ## Глава 6: Стратегия резервного копирования
+
+**В Н И М А Н И Е!** - Этот раздел я ещё сам не прошёл, т.к. не могу себе позволить купить диск для копирования (печалька). Однако, я решил включить главу в релизную версию мануала. Будьте осторожны!
 
 Резервные копии защищают от потери данных при сбое диска или ошибке.
 
@@ -2139,450 +2124,11 @@ UUID=<your-uuid-here> /mnt/backup ext4 defaults,nofail 0 2
 
 Параметр `nofail` означает что система загрузится даже если диск не подключен.
 
-### 6.6. Чек-лист Главы 6
-
-☐ Внешний USB диск подготовлен  
-☐ Диск смонтирован на `/mnt/backup`  
-☐ Скрипт `backup.sh` создан  
-☐ Скрипт резервного копирования протестирован  
-☐ Cron задача добавлена для автоматического бэкапа  
-☐ Логи бэкапа проверяются еженедельно
-
 ---
 
-## Глава 7: Развертывание собственных приложений с помощью Kamal
+Что дальше? Дальше планируется глава с дополнительными сервисами. Как минимум - Ollama + Open WebUI, gitea и Homeassistant.
 
-Kamal — инструмент для развертывания Docker контейнеров на удалённых серверах.
-
-**Примечание:** Это продвинутая тема для разработчиков. Если вы просто хотите использовать готовые сервисы — этот раздел можно пропустить.
-
-### 7.1. Установка Kamal
-
-**На локальном компьютере (не на сервере):**
-
-**macOS:**
-```bash
-brew install kamal
-```
-
-**Linux:**
-```bash
-sudo apt install -y ruby-full
-sudo gem install kamal
-```
-
-**Windows (WSL):**
-```bash
-curl -fsSL https://github.com/basecamp/kamal/releases/latest/download/kamal-x86_64-linux > kamal
-chmod +x kamal
-sudo mv kamal /usr/local/bin/
-```
-
-**Проверка:**
-```bash
-kamal version
-```
-
-### 7.2. Подготовка приложения
-
-Ваше приложение должно быть в Docker контейнере.
-
-**Требования:**
-- Dockerfile в корне проекта
-- Docker образ для вашего приложения
-- Доступ к реестру контейнеров (Docker Hub, GitHub Container Registry и т.д.)
-
-### 7.3. Конфигурация Kamal
-
-В корне вашего проекта создайте `config/deploy.yml`:
-
-```yaml
-service: myapp
-image: username/myapp:latest
-
-servers:
-  web:
-    - 192.168.1.100
-
-registry:
-  server: docker.io
-  username: username
-  password:
-    - KAMAL_REGISTRY_PASSWORD
-
-env:
-  clear:
-    DB_HOST: postgres
-    REDIS_HOST: redis
-  secret:
-    - RAILS_MASTER_KEY
-    - DATABASE_URL
-
-volumes:
-  - "myapp_data:/data"
-```
-**На локальной машине** установите переменные окружения:
-
-```bash
-export KAMAL_REGISTRY_PASSWORD=your_docker_hub_password
-export RAILS_MASTER_KEY=your_rails_master_key
-```
-
-### 7.4. Развертывание приложения
-
-**На локальном компьютере:**
-
-```bash
-# Инициализация
-kamal init
-
-# Настройка серверов и конфигурации (отредактируйте config/deploy.yml)
-
-# Развертывание
-kamal deploy
-
-# Проверка статуса
-kamal app status
-
-# Просмотр логов
-kamal app logs
-
-# Остановка
-kamal app stop
-
-# Удаление
-kamal remove
-```
-
-**Примечание:** Более подробная документация Kamal доступна в официальном репозитории: https://github.com/basecamp/kamal
-
-### 7.5. Чек-лист Главы 7
-
-☐ Kamal установлен локально  
-☐ Приложение завёрнуто в Docker контейнер  
-☐ config/deploy.yml создан и настроен  
-☐ Первое развертывание выполнено успешно  
-☐ Логи приложения просматриваются
-
----
-
-## Глава 8: Дополнительные сервисы и расширения
-
-### 8.1. Redis для Nextcloud (кэширование)
-
-**Когда нужен Redis:**
-- 5+ активных пользователей Nextcloud
-- Синхронизация больших папок
-- Частые операции с файлами
-
-**Когда можно обойтись без:**
-- 1-2 пользователя
-- Редкое использование
-- Нет проблем с производительностью
-
-**Утилизация ресурсов:**
-- RAM: 200-400 МБ (малая)
-- CPU: 1-2%
-- Диск: практически не использует
-
-**Примечание:** Redis можно добавить позже без проблем — просто разверните контейнер, отредактируйте Nextcloud конфиг и перезагрузите.
-
-#### Quadlet для Redis
-
-**На сервере:**
-```bash
-vim ~/.config/containers/systemd/container-redis.container
-```
-
-```ini
-[Unit]
-Description=Redis Cache for Nextcloud
-After=network.target
-
-[Container]
-Image=docker.io/redis:alpine
-ContainerName=redis
-PublishPort=6379:6379
-Volume=/srv/redis:/data
-
-[Service]
-Restart=always
-
-[Install]
-WantedBy=default.target
-```
-
-**На сервере** запустите:
-```bash
-systemctl --user daemon-reload
-systemctl --user start container-redis.service
-```
-
-#### Настройка Nextcloud для использования Redis
-
-**На сервере:**
-```bash
-podman exec -it nextcloudapp bash
-vi /var/www/html/config/config.php
-```
-
-Добавьте (найдите конец массива конфигурации):
-```php
-'memcache.local' => '\\OC\\Memcache\\Redis',
-'redis' => [
-    'host' => '127.0.0.1',
-    'port' => 6379,
-],
-```
-
-Сохраните и перезапустите Nextcloud:
-```bash
-systemctl --user restart nextcloud-app.container
-```
-
-### 8.2. Ollama + Open WebUI (локальные LLM модели)
-
-Ollama позволяет запускать LLM (например, Phi, Llama) локально.
-
-**На сервере** создайте quadlet для Ollama:
-
-```bash
-vim ~/.config/containers/systemd/container-ollama.container
-```
-
-```ini
-[Unit]
-Description=Ollama LLM Server
-After=network.target
-
-[Container]
-Image=docker.io/ollama/ollama:latest
-ContainerName=ollama
-PublishPort=11434:11434
-Volume=/srv/ollama:/root/.ollama
-Environment=OLLAMA_HOST=0.0.0.0:11434
-
-[Service]
-Restart=always
-
-[Install]
-WantedBy=default.target
-```
-
-**На сервере** запустите:
-```bash
-systemctl --user daemon-reload
-systemctl --user start container-ollama.service
-```
-
-#### Запуск моделей
-
-**Способ 1: Через CLI (интерактивный чат)**
-
-**На сервере:**
-```bash
-podman exec -it ollama ollama run phi
-```
-
-Тогда можно писать промпты и получать ответы.
-
-**Способ 2: Через REST API**
-
-**На любом компьютере в сети:**
-```bash
-curl http://192.168.1.100:11434/api/generate -d '{
-  "model": "phi",
-  "prompt": "Explain quantum computing"
-}'
-```
-
-**Способ 3: Через Web UI (Open WebUI)**
-
-**На сервере** создайте quadlet для Open WebUI:
-
-```bash
-vim ~/.config/containers/systemd/container-openwebui.container
-```
-
-```ini
-[Unit]
-Description=Open WebUI for Ollama
-After=network.target ollama.container
-Requires=container-ollama.service
-
-[Container]
-Image=docker.io/ghcr.io/open-webui/open-webui:latest
-ContainerName=open-webui
-PublishPort=8888:8080
-Volume=/srv/open-webui:/app/backend/data
-Environment=OLLAMA_API_BASE_URL=http://127.0.0.1:11434/api
-Environment=OLLAMA_BASE_URL=http://ollama:11434
-Network=host
-
-[Service]
-Restart=always
-
-[Install]
-WantedBy=default.target
-```
-
-#### UFW и доступ
-```bash
-sudo ufw allow 11434/tcp comment "Ollama"
-sudo ufw allow 8888/tcp comment "Open WebUI"
-```
-
-**На сервере** запустите:
-```bash
-systemctl --user daemon-reload
-systemctl --user start container-openwebui.service
-```
-
-**Доступ:** На любом компьютере откройте `http://192.168.1.100:8888`
-
-**Плюсы Open WebUI:**
-- Красивый интерфейс как ChatGPT
-- Управление моделями
-- История чатов
-- Возможность загружать свои модели
-
-**Первый запуск моделей:**
-
-**На сервере** скачайте модель:
-```bash
-podman exec -it ollama ollama pull phi
-# или
-podman exec -it ollama ollama pull llama2
-```
-
-Процесс может занять время (зависит от размера модели, Phi ~3 ГБ).
-
-### 8.3. Gitea (локальный Git сервер)
-
-Для хранения кода локально.
-
-#### Quadlet для Gitea
-
-**На сервере:**
-```bash
-vim ~/.config/containers/systemd/container-gitea.container
-```
-
-```ini
-[Unit]
-Description=Gitea Git Server
-After=network.target
-
-[Container]
-Image=docker.io/gitea/gitea:latest
-ContainerName=gitea
-PublishPort=3000:3000
-PublishPort=2222:22
-Volume=/srv/gitea:/data
-
-[Service]
-Restart=always
-
-[Install]
-WantedBy=default.target
-```
-
-**На сервере** запустите:
-```bash
-systemctl --user daemon-reload
-systemctl --user start container-gitea.service
-```
-
-**Доступ:** На любом компьютере откройте `http://192.168.1.100:3000`
-
-### 8.4. Homeassistant (умный дом)
-
-Home Assistant — платформа автоматизации для управления умным домом.
-
-```bash
-mkdir -p /srv/homeassistant
-
-vim ~/.config/containers/systemd/container-homeassistant.container
-```
-
-**Содержимое:**
-```ini
-[Unit]
-Description=Home Assistant
-After=network.target
-
-[Container]
-Image=docker.io/homeassistant/home-assistant:latest
-ContainerName=homeassistant
-PublishPort=8123:8123
-Volume=/srv/homeassistant:/config
-Environment=TZ=UTC
-
-[Service]
-Restart=always
-
-[Install]
-WantedBy=default.target
-```
-
-**Запуск:**
-```bash
-systemctl --user daemon-reload
-systemctl --user enable --now container-homeassistant.service
-sudo ufw allow 8123/tcp comment "Home Assistant"
-```
-
-Доступ: `http://192.168.1.100:8123`
-
-### 8.5. Важные команды для повседневного использования
-
-```bash
-# Контейнеры
-podman ps                    # Список работающих контейнеров
-podman ps -a                 # Все контейнеры (включая остановленные)
-podman logs <container_id>   # Логи контейнера
-podman exec -it <id> bash    # Войти в контейнер
-
-# Systemd quadlets
-systemctl --user status      # Статус всех сервисов
-systemctl --user restart container-<name>.service  # Перезапуск
-systemctl --user stop container-<name>.service     # Остановка
-journalctl --user -f -u container-<name>.service  # Логи в реальном времени
-
-# Система
-sudo snapper list            # Список снапшотов
-df -h                        # Использование диска
-free -h                      # Использование памяти
-sudo systemctl reboot        # Перезагрузка
-```
-
-### 8.6. Обновление контейнеров
-
-Время от времени нужно обновлять образы контейнеров.
-
-```bash
-# Скачать новый образ
-podman pull docker.io/image:latest
-
-# Остановить контейнер
-systemctl --user stop container-<name>.service
-
-# Удалить старый контейнер
-podman rm <container_id>
-
-# Перезапустить (systemd создаст новый контейнер)
-systemctl --user daemon-reload
-systemctl --user start container-<name>.service
-```
-
-### 8.7. Чек-лист Главы 8
-
-☐ Ollama установлен  
-☐ Open WebUI установлен  
-☐ Portainer установлен (опционально)  
-☐ Home Assistant установлен (опционально)  
-☐ Все порты открыты в UFW  
-☐ Знаете основные команды управления контейнерами
+Утро вечера мудренее. 
 
 ---
 
@@ -2594,14 +2140,10 @@ systemctl --user start container-<name>.service
 
 **На сервере** через systemd:
 ```bash
-systemctl --user status jellyfin.container
-journalctl --user -u jellyfin.container -f  # Live логи
+systemctl --user status container-jellyfin.service
+journalctl --user -u container-jellyfin.service -f  # Live логи
 ```
 
-**На сервере** через podman:
-```bash
-podman logs jellyfin -f  # -f для live вывода
-```
 
 #### Вход в контейнер
 
@@ -2616,7 +2158,7 @@ podman exec -it jellyfin bash
 
 **На сервере:**
 ```bash
-systemctl --user restart jellyfin.container
+systemctl --user restart container-jellyfin.service
 ```
 
 #### Просмотр использования ресурсов
@@ -2634,7 +2176,8 @@ podman stats jellyfin
 
 ```bash
 # 1. Остановить контейнер
-systemctl --user stop jellyfin.container
+systemctl --user disable container-jellyfin.service
+systemctl --user stop container-jellyfin.service
 
 # 2. Скачать новый образ
 podman pull docker.io/jellyfin/jellyfin:latest
@@ -2643,10 +2186,10 @@ podman pull docker.io/jellyfin/jellyfin:latest
 systemctl --user daemon-reload
 
 # 4. Запустить контейнер (будет использован новый образ)
-systemctl --user start jellyfin.container
+systemctl --user start container-jellyfin.service
 
 # 5. Проверка
-systemctl --user status jellyfin.container
+systemctl --user status container-jellyfin.service
 ```
 
 **На сервере** удаление старых образов:
@@ -2655,112 +2198,7 @@ podman image prune  # Удалит неиспользуемые образы
 podman image prune -a  # Удалит ВСЕ образы (осторожно!)
 ```
 
-### Приложение C: 2FA для SSH через Google Authenticator
-
-Дополнительная защита SSH через TOTP (Time-based One-Time Password).
-
-#### Установка
-
-**На сервере:**
-```bash
-sudo apt install -y libpam-google-authenticator
-```
-
-#### Настройка для пользователя
-
-**На сервере:**
-```bash
-google-authenticator
-```
-
-Ответьте на вопросы:
-- **Do you want authentication tokens to be time-based?** y (для TOTP)
-- **Scan QR code** — отсканируйте QR в Google Authenticator, Authy, Microsoft Authenticator и т.д.
-- **Update the ~/.google_authenticator file?** y
-- **Do you want to disallow multiple uses of the same authentication token?** y
-- **By default, a new token is generated every 30 seconds...** (можно оставить по умолчанию, нажать Enter)
-- **If the computer that you are logging into does not have the current time, beware!** y (для синхронизации времени)
-- **Do you want to enable rate-limiting?** y (для защиты от брутфорса)
-
-Будет выведено 5 резервных кодов — **сохраните их в безопасном месте!** Они позволят войти если потеряете доступ к приложению.
-
-#### Включение в PAM для SSH
-
-**На сервере:**
-```bash
-sudo vim /etc/pam.d/sshd
-```
-
-Добавьте в начало файла:
-```
-auth required pam_google_authenticator.so
-```
-
-Сохраните.
-
-#### Настройка sshd_config
-
-**На сервере:**
-```bash
-sudo vim /etc/ssh/sshd_config
-```
-
-Найдите и измените:
-```
-ChallengeResponseAuthentication yes
-```
-
-Добавьте (если нет):
-```
-AuthenticationMethods publickey,keyboard-interactive
-```
-
-Сохраните.
-
-#### Перезагрузка SSH
-
-**На сервере:**
-```bash
-sudo systemctl restart sshd
-```
-
-#### Проверка
-
-**На локальном компьютере** попробуйте подключиться:
-```bash
-ssh -i ~/.ssh/homeserver_key myusername@192.168.1.100
-```
-
-При входе появится запрос:
-```
-Verification code: _
-```
-
-Введите 6-значный код из приложения на телефоне, нажмите Enter.
-
-Если вошли — 2FA работает!
-
-#### Отключение 2FA
-
-Если 2FA больше не нужна, на сервере:
-
-```bash
-# 1. Удалить файл 2FA
-rm ~/.google_authenticator
-
-# 2. Отключить в PAM
-sudo vim /etc/pam.d/sshd
-# Удалить строку: auth required pam_google_authenticator.so
-
-# 3. Отключить в sshd_config
-sudo vim /etc/ssh/sshd_config
-# Измените обратно: ChallengeResponseAuthentication no
-
-# 4. Перезагрузить SSH
-sudo systemctl restart sshd
-```
-
-### Приложение D: Шпаргалка по командам
+### Приложение C: Шпаргалка по командам
 
 #### systemd (управление сервисами)
 
@@ -2770,25 +2208,25 @@ sudo systemctl restart sshd
 systemctl --user daemon-reload
 
 # Запуск сервиса
-systemctl --user start <service>.container
+systemctl --user start container-<service>.service
 
 # Остановка сервиса
-systemctl --user stop <service>.container
+systemctl --user stop container-<service>.service
 
 # Перезапуск сервиса
-systemctl --user restart <service>.container
+systemctl --user restart container-<service>.service
 
 # Включить автозапуск
-systemctl --user enable <service>.container
+systemctl --user enable container-<service>.service
 
 # Отключить автозапуск
-systemctl --user disable <service>.container
+systemctl --user disable container-<service>.service
 
 # Статус сервиса
-systemctl --user status <service>.container
+systemctl --user status container-<service>.service
 
 # Логи
-journalctl --user -u <service>.container -f
+journalctl --user -u container-<service>.service -f
 
 # Все сервисы пользователя
 systemctl --user list-units --type=service
@@ -2863,7 +2301,7 @@ sudo ip link set <interface> down
 sudo ip link set <interface> up
 ```
 
-### Приложение E: Понимание вывода команды `ip a`
+### Приложение D: Понимание вывода команды `ip a`
 
 Команда `ip address show` (сокращённо `ip a`) показывает все сетевые интерфейсы и назначенные им IP адреса на сервере.
 
@@ -2982,61 +2420,3 @@ ip route | grep default
 | `static` (IP) | 🔒 Постоянный IP | Установлен вручную |
 
 ---
-
-## Заключение
-
-Поздравляю! Вы успешно развернули полнофункциональный домашний сервер с:
-
-✅ **Ubuntu Server 24.04 LTS** с Btrfs и автоматическими снапшотами  
-✅ **Безопасность:** SSH по ключам (ED25519), UFW, fail2ban  
-✅ **Podman контейнеры** с systemd quadlets для автозапуска (rootless)  
-✅ **Nextcloud** (личное облако)  
-✅ **PostgreSQL** (база данных)  
-✅ **Jellyfin** (медиасервер)  
-✅ **qBittorrent** (торрент-клиент)  
-✅ **Syncthing** (синхронизация файлов)  
-✅ **Samba** (файловый доступ из Windows/macOS)  
-✅ **Cockpit** (веб-интерфейс для управления)  
-✅ **Redis** (кэширование для Nextcloud)  
-✅ **Ollama + Open WebUI** (локальные LLM модели)  
-✅ **Gitea** (локальный Git сервер)  
-✅ **Резервное копирование** (rsync, Btrfs send/receive, Borg)  
-✅ **Kamal** для деплоя собственных приложений
-
-Ваш сервер готов к работе и легко расширяется!
-
-### Следующие шаги
-
-- Добавьте медиафайлы в Jellyfin (через Samba шару Media)
-- Настройте синхронизацию в Syncthing с вашими устройствами
-- Загрузите файлы в Nextcloud
-- Разверните свои приложения через Kamal
-- Настройте автоматическое резервное копирование
-
-### Обслуживание
-
-- **Еженедельно:** Проверяйте обновления: `sudo apt update && sudo apt list --upgradable`
-- **Раз в 2 недели:** Делайте: `sudo apt upgrade -y`
-- **Ежемесячно:** Проверяйте бэкапы (делайте тестовое восстановление)
-- **Постоянно:** Мониторьте логи через Cockpit
-
-### Важные команды для памяти
-
-**На сервере:**
-- `systemctl --user status` — статус всех сервисов
-- `podman ps` — список контейнеров
-- `journalctl --user -f` — живые логи
-- `ip a` — сетевые интерфейсы
-- `sudo snapper list` — снапшоты
-
-### Безопасность
-
-- ✅ SSH ключи включены (пароли отключены)
-- ✅ UFW firewall активен
-- ✅ fail2ban защищает от брутфорса
-- ✅ Btrfs снапшоты защищают от ошибок
-- ✅ Резервные копии защищают от потери данных
-- ✅ Rootless Podman контейнеры (без root прав)
-
----
-
