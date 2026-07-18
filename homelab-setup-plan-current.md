@@ -285,6 +285,17 @@ myusername@homeserver:~$
 
 Поздравляю! Система установлена.
 
+#### Настройка часового пояса
+
+По умолчанию Ubuntu Server использует UTC. Если сервер физически у вас дома, выставьте локальный часовой пояс — от него зависит, как будут интерпретироваться расписания systemd-таймеров (cron-подобные `OnCalendar=`), которые встретятся дальше в этом гайде:
+
+```bash
+sudo timedatectl set-timezone Asia/Yerevan  # замените на свой часовой пояс
+timedatectl  # проверка
+```
+
+**Важно:** пока часовой пояс не настроен (система остаётся в `Etc/UTC`), любое расписание вида «запускать в 4 утра» на самом деле означает 4 утра по UTC, а не по вашему реальному времени.
+
 ### 1.4. Обновление системы
 
 Первым делом обновите все пакеты:
@@ -305,6 +316,30 @@ sudo apt upgrade -y
 ```
 
 Ручное обновление безопаснее, чем автоматическое — вы видите что меняется и можете откатить через Btrfs снапшот если что-то сломается.
+
+**Важно:** несмотря на это, Ubuntu Server по умолчанию сам включает автоматические обновления безопасности через `unattended-upgrades` (таймер `apt-daily-upgrade.timer`). Он срабатывает в непредсказуемое для вас время (по умолчанию между 6:00 и 7:00 по времени сервера) и может создать заметную нагрузку на CPU.
+
+Проверить расписание:
+```bash
+systemctl list-timers apt-daily-upgrade.timer
+```
+
+Варианты:
+- **Отключить полностью**, раз вы и так обновляете вручную:
+  ```bash
+  sudo systemctl disable --now apt-daily-upgrade.timer apt-daily.timer
+  ```
+- **Оставить (это патчи безопасности), но перенести на ночное время**, например на 4 утра:
+  ```bash
+  sudo mkdir -p /etc/systemd/system/apt-daily-upgrade.timer.d
+  sudo tee /etc/systemd/system/apt-daily-upgrade.timer.d/override.conf > /dev/null << 'EOF'
+  [Timer]
+  OnCalendar=
+  OnCalendar=*-*-* 04:00:00
+  EOF
+  sudo systemctl daemon-reload
+  sudo systemctl restart apt-daily-upgrade.timer
+  ```
 
 ### 1.5. Установка базовых утилит
 
@@ -556,6 +591,32 @@ TIMELINE_LIMIT_YEARLY="0"
 ```
 
 Это значит: храним 5 часовых и 7 дневных снапшотов.
+
+**Важно про btrfs-квоты (QGROUP):** `snapper create-config` может выставить `SPACE_LIMIT`/`FREE_LIMIT` (лимиты очистки по объёму) и включить учёт `QGROUP` — по умолчанию, без явного запроса. Из-за этого при **каждом** создании или удалении снапшота ядро запускает пересчёт quota groups (`btrfs-qgroup-rescan`) — на Btrfs это тяжёлая операция, способная грузить одно ядро CPU на 100% продолжительное время, причём **незаметно в systemd-логах** (это фоновый kworker, а не отдельный сервис).
+
+Проверьте:
+```bash
+sudo snapper -c root get-config | grep -E "QGROUP|SPACE_LIMIT|FREE_LIMIT"
+```
+
+Если `QGROUP` не пустой (например, `1/0`), а очистки по количеству (`NUMBER_LIMIT`, `TIMELINE_LIMIT_*`) вам достаточно — отключите квоты, это убирает фоновую нагрузку:
+```bash
+sudo sed -i 's/^QGROUP=.*/QGROUP=""/' /etc/snapper/configs/root
+sudo btrfs quota disable /
+```
+
+**Тюнинг частоты для тихого сервера:** `snapper-timeline.timer` по умолчанию тикает каждый час (`OnCalendar=hourly`) — на маломощном домашнем сервере это лишняя постоянная активность, если почасовая гранулярность снапшотов не нужна. Снизить частоту можно через override, не трогая сам пакетный юнит:
+```bash
+sudo mkdir -p /etc/systemd/system/snapper-timeline.timer.d
+sudo tee /etc/systemd/system/snapper-timeline.timer.d/override.conf > /dev/null << 'EOF'
+[Timer]
+OnCalendar=
+OnCalendar=Sun *-*-* 04:00:00
+EOF
+sudo systemctl daemon-reload
+sudo systemctl restart snapper-timeline.timer
+```
+Пример выше — раз в неделю по воскресеньям в 4 утра по локальному времени сервера (см. §1.3 про часовой пояс).
 
 **Шаг 4:** На сервере запустите таймеры snapper
 
