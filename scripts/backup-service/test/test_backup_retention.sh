@@ -5,7 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_SH="$SCRIPT_DIR/../backup.sh"
 
 TESTDIR="$(mktemp -d)"
-trap 'rm -rf "$TESTDIR"' EXIT
+TESTDIR3="$(mktemp -d)"
+trap 'rm -rf "$TESTDIR" "$TESTDIR3"' EXIT
 
 mkdir -p "$TESTDIR/src1" "$TESTDIR/dest"
 echo "hello" > "$TESTDIR/src1/file.txt"
@@ -44,4 +45,24 @@ COUNT2="$(find "$TESTDIR/dest" -maxdepth 1 -name 'homeserver-backup_*.zip' | wc 
 [[ "$COUNT2" -eq 3 ]] || { echo "FAIL: expected still 3 archives after same-day rerun, got $COUNT2"; exit 1; }
 
 echo "PASS: scenario 2 (same-day rerun overwrites, no duplicate)"
+
+# Scenario 3: fewer existing archives than RETENTION_COUNT -> no pruning occurs
+mkdir -p "$TESTDIR3/src1" "$TESTDIR3/dest"
+echo "hello" > "$TESTDIR3/src1/file.txt"
+echo "$TESTDIR3/src1" > "$TESTDIR3/backup.list"
+
+# Pre-seed only 2 archives, well under RETENTION_COUNT=8 default
+touch "$TESTDIR3/dest/homeserver-backup_2020-01-01.zip"
+touch "$TESTDIR3/dest/homeserver-backup_2020-01-02.zip"
+
+BACKUP_LIST="$TESTDIR3/backup.list" BACKUP_DEST="$TESTDIR3/dest" "$BACKUP_SH" >/dev/null
+
+COUNT3="$(find "$TESTDIR3/dest" -maxdepth 1 -name 'homeserver-backup_*.zip' | wc -l)"
+[[ "$COUNT3" -eq 3 ]] || { echo "FAIL: expected 3 archives (2 pre-existing + today's new one, none pruned since under RETENTION_COUNT default of 8), got $COUNT3"; exit 1; }
+
+for f in "$TESTDIR3/dest/homeserver-backup_2020-01-01.zip" "$TESTDIR3/dest/homeserver-backup_2020-01-02.zip"; do
+    [[ -f "$f" ]] || { echo "FAIL: pre-existing archive $f should not have been pruned"; exit 1; }
+done
+
+echo "PASS: scenario 3 (fewer archives than RETENTION_COUNT -> nothing pruned)"
 echo "PASS: test_backup_retention.sh"

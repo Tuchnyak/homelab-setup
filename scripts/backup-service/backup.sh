@@ -20,7 +20,8 @@ mkdir -p "$BACKUP_DEST"
 
 paths=()
 while IFS= read -r line || [[ -n "$line" ]]; do
-    line="$(echo -n "$line" | xargs)"
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
     [[ -z "$line" || "$line" == \#* ]] && continue
     if [[ -e "$line" ]]; then
         paths+=("$line")

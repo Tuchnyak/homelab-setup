@@ -8,11 +8,11 @@ design rationale.
 
 ## Deploying to the server
 
-Run from a checkout of this repo, on a machine with `ssh homeserver` configured:
+Run from the root of a checkout of this repo, on a machine with `ssh homeserver` configured:
 
 ```bash
-scp backup.sh backup.list homeserver:~/backup-service/
-scp backup-homeserver.service backup-homeserver.timer homeserver:~/.config/systemd/user/
+scp scripts/backup-service/backup.sh scripts/backup-service/backup.list homeserver:~/backup-service/
+scp scripts/backup-service/backup-homeserver.service scripts/backup-service/backup-homeserver.timer homeserver:~/.config/systemd/user/
 ssh homeserver 'chmod +x ~/backup-service/backup.sh'
 ssh homeserver 'systemctl --user daemon-reload'
 ssh homeserver 'systemctl --user enable --now backup-homeserver.timer'
@@ -33,5 +33,6 @@ ssh homeserver 'ls -la /srv/backups/homeserver/'
 ## Changing what gets backed up
 
 Edit `backup.list` (one absolute path per line, `#` for comments), then
-re-`scp` it to `~/backup-service/backup.list` on the server. No service
-restart needed — the list is read fresh on every run.
+re-`scp` it from repo root with `scp scripts/backup-service/backup.list
+homeserver:~/backup-service/backup.list`. No service restart needed — the
+list is read fresh on every run.
