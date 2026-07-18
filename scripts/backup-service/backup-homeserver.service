@@ -1,0 +1,6 @@
+[Unit]
+Description=Weekly backup of homeserver documents to /srv/backups/homeserver
+
+[Service]
+Type=oneshot
+ExecStart=%h/backup-service/backup.sh
