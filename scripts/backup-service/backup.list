@@ -1,0 +1,9 @@
+# Weekly backup source list — one absolute path per line.
+# Blank lines and lines starting with # are ignored.
+
+/srv/syncthing/data
+
+# Candidates for later, currently excluded:
+# /srv/adguardhome
+# /srv/npm
+# /srv/misc_data
