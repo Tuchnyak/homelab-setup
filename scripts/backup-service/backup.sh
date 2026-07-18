@@ -38,3 +38,9 @@ rm -f "$PARTIAL_PATH"
 zip -r -q "$PARTIAL_PATH" "${paths[@]}"
 mv "$PARTIAL_PATH" "$ARCHIVE_PATH"
 echo "Created $ARCHIVE_PATH"
+
+mapfile -t old_archives < <(find "$BACKUP_DEST" -maxdepth 1 -name 'homeserver-backup_*.zip' -printf '%f\n' | sort -r | tail -n "+$((RETENTION_COUNT + 1))")
+for old in "${old_archives[@]}"; do
+    echo "Removing old archive: $old"
+    rm -f "$BACKUP_DEST/$old"
+done
